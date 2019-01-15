@@ -1,12 +1,22 @@
 import React, { Component } from 'react'
 import * as q from '../queries/queries';
-import { graphql } from 'react-apollo';
+import { graphql, compose } from 'react-apollo';
 import { Button, Form, FormGroup, Label, Input, Container, Row, Col } from 'reactstrap';
 
 
 class AddBook extends Component {
+    constructor(props) {
+
+        super(props);
+
+        this.state = {
+            name: "",
+            genre: "",
+            authorId: ""
+        }
+    }
     displayAuthors() {
-        var data = this.props.data;
+        var data = this.props.getAuthorsQuery;
 
         if (data.loading) {
 
@@ -16,23 +26,35 @@ class AddBook extends Component {
             })
         }
     }
+    submitform(e) {
+        e.preventDefault();
+        
+        this.props.addBookMutation({
+            variables: {
+                name: this.state.name,
+                genre: this.state.genre,
+                authorId: this.state.authorId
+            },
+            refetchQueries: [{ query: q.getBooksQuery }]
+        });
+    }
     render() {
         return (
             <Container>
                 <Row>
                     <Col md="9" >
-                        <Form>
+                        <Form id="addform" onSubmit={this.submitform.bind(this)}>
                             <FormGroup>
                                 <Label for="bookname">Book name</Label>
-                                <Input type="text" name="bookname" id="bookname" placeholder="" />
+                                <Input onChange={(e) => this.setState({ name: e.target.value })} type="text" name="bookname" id="bookname" placeholder="" />
                             </FormGroup>
                             <FormGroup>
                                 <Label for="genre">Genre</Label>
-                                <Input type="text" name="genre" id="genre" placeholder="" />
+                                <Input onChange={(e) => this.setState({ genre: e.target.value })} type="text" name="genre" id="genre" placeholder="" />
                             </FormGroup>
                             <FormGroup>
                                 <Label for="authors">Select</Label>
-                                <Input type="select" name="authors" id="authors">
+                                <Input onChange={(e) => this.setState({ authorId: e.target.value })} type="select" name="authors" id="authors">
                                     <option>Select author</option>
                                     {this.displayAuthors()}
                                 </Input>
@@ -45,4 +67,7 @@ class AddBook extends Component {
         )
     }
 }
-export default graphql(q.getAuthorsQuery)(AddBook);
+export default compose(
+    graphql(q.getAuthorsQuery, { name: "getAuthorsQuery" }),
+    graphql(q.addBookMutation, { name: "addBookMutation" })
+)(AddBook);
